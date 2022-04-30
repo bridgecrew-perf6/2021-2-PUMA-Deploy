@@ -15,50 +15,62 @@ services:
             - puma-network-p
     project-service:
         container_name: project-service
-        image: ${DOCKER_HUB}:projectservice-latest
+        image: ${DOCKER_HUB}/projectservice
+        restart: always
+        environment:
+            ENVIRONMENT: ${ENVIRONMENT}
+            IP_ADDRESS: ${IP_ADDRESS}
+            SECRET_PROD: ${SECRET_PROD}
+            DB_URL: ${DB_URL}
         ports:
             - "3000:3000"
         depends_on:
             - db
         networks:
             - puma-network-p
+        command:
+          ["./wait-for-it.sh", "db:5432", "--", "npm","run","start"]
     user-service:
         container_name: user-service
-        image: ${DOCKER_HUB}:userservice-latest
+        image: ${DOCKER_HUB}/userservice
+        restart: always
+        environment:
+            ENVIRONMENT: ${ENVIRONMENT}
+            IP_ADDRESS: ${IP_ADDRESS}
+            SECRET_PROD: ${SECRET_PROD}
+            DB_URL: ${DB_URL}
         ports:
             - "3001:3001"
         depends_on:
             - db
         networks:
             - puma-network-p
+        command:
+          ["./wait-for-it.sh", "db:5432", "--", "npm","run","start"]
     api-gateway:
         container_name: api-gateway
-        image: ${DOCKER_HUB}:apigateway-latest
+        image: ${DOCKER_HUB}/apigateway
+        restart: always
+        environment:
+            ENVIRONMENT: ${ENVIRONMENT}
+            IP_ADDRESS: ${IP_ADDRESS}
+            SECRET_PROD: ${SECRET_PROD}
+            DB_URL: ${DB_URL}
         ports:
             - "3004:3004"
         networks:
             - puma-network-p
     frontend:
         container_name: frontend
-        image: ${DOCKER_HUB}:frontend-latest
+        image: ${DOCKER_HUB}/frontend
+        environment:
+            VUE_APP_ENVIRONMENT: ${ENVIRONMENT}
+            VUE_APP_IP_ADDRESS: ${IP_ADDRESS}
         ports:
             - "80:80"
         networks:
             - puma-network-p
-    watchtower:
-        image: containrrr/watchtower
-        volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
-        command: --debug --http-api-update
-        environment:
-          - WATCHTOWER_HTTP_API_TOKEN=${WATCH_TOKEN}
-        labels:
-          - "com.centurylinklabs.watchtower.enable=false"
-        ports:
-          - 8080:8080
-        networks:
-            - puma-network-p
-
             
 networks:
     puma-network-p:            
+        driver: bridge
